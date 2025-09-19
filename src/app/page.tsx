@@ -6,11 +6,13 @@ import EventSection from "@/components/sections/EventSection";
 import WhyParticipateSection from "@/components/sections/WhyParticipateSection";
 import CTASection from "@/components/sections/CTASection";
 import CTAWithCountdown from "@/components/sections/CTAWithCountdown";
+import Header from "./(components)/navbar";
+import Footer from "./(components)/footer";
 
 export default function Home() {
   return (
     <div>
-      {/* <ButtonCta/> */}
+      <Header />
       <Hero />
       <Partners />
       <GlobalSection />
@@ -27,6 +29,7 @@ export default function Home() {
         <CTAWithCountdown />
       </div>
       <CTASection />
+      <Footer />
     </div>
   );
 }

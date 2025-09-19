@@ -9,31 +9,31 @@ const carouselItems = [
     id: 1,
     title: "Game Devs Angolanos",
     icon: "👨‍💻",
-    image: "/images/gamedev-placeholder.png",
+    image: "/images/ev01.jpg",
   },
   {
     id: 2,
     title: "Gamers e Comunidade",
     icon: "🎮",
-    image: "/images/gamers-placeholder.png",
+    image: "/images/ev02.jpg",
   },
   {
     id: 3,
     title: "Professores e Mentores",
     icon: "👩‍🏫",
-    image: "/images/professores-placeholder.png",
+    image: "/images/ev03.jpg",
   },
   {
     id: 4,
     title: "Patrocinadores & Parceiros",
     icon: "💼",
-    image: "/images/parceiros-placeholder.png",
+    image: "/images/ev04.jpg",
   },
   {
     id: 5,
     title: "Organizadores de Eventos",
     icon: "🎤",
-    image: "/images/eventos-placeholder.png",
+    image: "/images/ev05v.jpg",
   },
 ];
 

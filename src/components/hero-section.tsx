@@ -3,7 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import ButtonCta from "@/components/ui/button-cta";
-import Countdown from "@/components/countdown";
+import Countdown from "@/components/Countdown";
 
 export default function Hero() {
   const [videoLoaded, setVideoLoaded] = useState(true);

@@ -45,14 +45,17 @@ export default function Header() {
               backdrop-blur-lg bg-white/5 rounded-full px-6 py-2
             "
           >
+            <MenuItem href="#quem-somos">
+              Quem Somos
+            </MenuItem>
             <MenuItem href="#sobre">
               Sobre
             </MenuItem>
-            <MenuItem href="#servicos">
-              Serviços
+            <MenuItem href="#evento">
+              Evento
             </MenuItem>
             <MenuItem href="#contato">
-              Contato
+              Contacto
             </MenuItem>
           </nav>
 

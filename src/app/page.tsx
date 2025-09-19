@@ -1,9 +1,9 @@
 import Hero from "@/components/hero-section";
 import Partners from "@/components/sections/Partners";
-import GlobalSection from "@/components/sections/Globalsection";
+import GlobalSection from "@/components/sections/GlobalSection";
 import MVVSection from "@/components/sections/MVVSection";
-import EventSection from "@/components/sections/Eventsection";
-import WhyParticipateSection from "@/components/sections/Whyparticipatesection";
+import EventSection from "@/components/sections/EventSection";
+import WhyParticipateSection from "@/components/sections/WhyParticipateSection";
 import CTASection from "@/components/sections/CTASection";
 import CTAWithCountdown from "@/components/sections/CTAWithCountdown";
 

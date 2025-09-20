@@ -52,7 +52,7 @@ export default function SubscriptionForm() {
         icon: "success",
         title: "Inscrição Confirmada 🎉",
         html: `
-          <p>Obrigado, <strong>${formData.name}</strong>!</p>
+          <p>Obrigado, ⚡ <strong>${formData.name}</strong>!</p>
           <p>Verifique seu e-mail para mais detalhes.</p>
         `,
         confirmButtonColor: "#FF5C00",
@@ -152,7 +152,7 @@ export default function SubscriptionForm() {
           <input
             type="url"
             name="profile"
-            placeholder="LinkedIn ou Website (opcional)"
+            placeholder="Link da sua melhor rede social/website (opcional)"
             value={formData.profile}
             onChange={handleChange}
             className="px-5 py-4 text-lg rounded-2xl border border-gray-700 bg-[#232323] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C00] transition"

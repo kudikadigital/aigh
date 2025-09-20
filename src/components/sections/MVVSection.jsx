@@ -21,7 +21,7 @@ const content = [
     id: "valores",
     title: "Valores",
     image: "/images/valor.png",
-    text: "Inovação, Colaboração, Impacto, Excelência.",
+    text: "Inovação, Colaboração, Impacto, Excelência, Transparência e Agilidade.",
   },
 ];
 

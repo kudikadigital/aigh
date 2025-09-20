@@ -60,7 +60,7 @@ export default function Footer() {
         {/* Redes Sociais */}
         <div className="flex space-x-4 mt-2">
           <a
-            href="https://facebook.com"
+            href="https://www.facebook.com/share/16uGMSj7XP/"
             target="_blank"
             rel="noopener noreferrer"
             className="w-10 h-10 border border-[#FF5C00] rounded-full flex items-center justify-center text-[#FF5C00] hover:bg-[#FF5C00] hover:text-black transition"

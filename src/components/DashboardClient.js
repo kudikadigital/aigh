@@ -1,9 +1,37 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Users, User } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-export default function DashboardClient({ subscribers }) {
+export default function DashboardClient() {
+  const [subscribers, setSubscribers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 1️⃣ Buscar inscritos do Supabase
+  useEffect(() => {
+    async function fetchSubscribers() {
+      try {
+        const { data, error } = await supabase
+          .from("inscritos")
+          .select("*")
+          .order("id", { ascending: true });
+
+        if (error) {
+          console.error("Erro ao buscar inscritos:", error);
+        } else {
+          setSubscribers(data);
+        }
+      } catch (err) {
+        console.error("Erro inesperado ao buscar inscritos:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchSubscribers();
+  }, []);
+
   const totalSubscribers = subscribers.length;
 
   const rolesCount = useMemo(() => {
@@ -12,6 +40,70 @@ export default function DashboardClient({ subscribers }) {
       return acc;
     }, {});
   }, [subscribers]);
+
+  // Skeleton card
+  const SkeletonCard = () => (
+    <div className="bg-[#1a1a1a] rounded-xl shadow-xl border border-gray-700 h-40 animate-pulse flex flex-col">
+      <div className="h-1 bg-gray-600 rounded-t-xl"></div>
+      <div className="flex-1 p-6 flex items-center gap-4">
+        <div className="bg-gray-700 p-4 rounded-full w-12 h-12"></div>
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+          <div className="h-6 bg-gray-700 rounded w-1/2"></div>
+        </div>
+        <div className="h-6 bg-gray-700 rounded w-12"></div>
+      </div>
+    </div>
+  );
+
+  // Skeleton row da tabela
+  const SkeletonRow = () => (
+    <tr className="border-b border-gray-700 animate-pulse">
+      <td className="p-3"><div className="h-4 bg-gray-700 rounded w-24"></div></td>
+      <td className="p-3 hidden sm:table-cell"><div className="h-4 bg-gray-700 rounded w-36"></div></td>
+      <td className="p-3"><div className="h-4 bg-gray-700 rounded w-20"></div></td>
+      <td className="p-3 hidden sm:table-cell"><div className="h-4 bg-gray-700 rounded w-24"></div></td>
+      <td className="p-3 hidden sm:table-cell"><div className="h-4 bg-gray-700 rounded w-28"></div></td>
+    </tr>
+  );
+
+  if (loading) {
+    return (
+      <main className="p-6 space-y-8">
+        {/* Skeleton cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </section>
+
+        {/* Skeleton tabela */}
+        <section className="bg-[#1a1a1a] rounded-xl p-6 shadow-xl border border-[#FF5C00]/70">
+          <h3 className="text-xl font-semibold mb-4 text-white">
+            Detalhes dos Inscritos
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left table-auto">
+              <thead>
+                <tr className="border-b border-gray-600 text-gray-400 uppercase text-sm">
+                  <th className="p-3">Nome</th>
+                  <th className="p-3 hidden sm:table-cell">Email</th>
+                  <th className="p-3">Papel</th>
+                  <th className="p-3 hidden sm:table-cell">Telefone</th>
+                  <th className="p-3 hidden sm:table-cell">Perfil</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 space-y-8">

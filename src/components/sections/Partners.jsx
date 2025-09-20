@@ -6,6 +6,9 @@ const partners = [
   "/partners/logo3.png",
   "/partners/logo4.png",
   "/partners/inapem.png",
+  "/partners/logo6.png",
+  "/partners/logo7.png",
+  "/partners/logo5.png",
 ];
 
 export default function Partners() {

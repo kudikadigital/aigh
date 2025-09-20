@@ -148,6 +148,8 @@ export default function SubscriptionForm() {
             <option value="Professor/Mentor">Professor/Mentor</option>
             <option value="Patrocinador/Parceiro">Patrocinador/Parceiro</option>
             <option value="Organizador">Organizador</option>
+            <option value="Interessado(a) pela indústria de vídeo jogos em Angola ">Interessado(a) pela indústria de vídeo jogos em Angola</option>
+            <option value="Outro">Outro</option>
           </select>
           <input
             type="url"

@@ -1,9 +1,13 @@
 import Link from "next/link";
 
-export default function MenuItem({ href, children }) {
+/**
+ * @param {{ href: string, children: React.ReactNode, onClick?: () => void }} props
+ */
+export default function MenuItem({ href, children, onClick }) {
   return (
     <Link
       href={href}
+      onClick={onClick} // agora funciona no JS também
       className="
         relative px-3 py-1 rounded-full
         text-white transition-colors duration-300

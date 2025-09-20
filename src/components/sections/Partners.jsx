@@ -5,7 +5,7 @@ const partners = [
   "/partners/logo2.png",
   "/partners/logo3.png",
   "/partners/logo4.png",
-//   "/partners/logo5.png",
+  "/partners/inapem.png",
 ];
 
 export default function Partners() {

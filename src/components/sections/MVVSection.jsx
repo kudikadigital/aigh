@@ -4,19 +4,18 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-// Conteúdo atualizado
 const content = [
   {
     id: "missao",
     title: "Missão",
     image: "/images/missao.png",
-    text: "Formar, profissionalizar e conectar talentos africanos, transformando o futuro da tecnologia no continente.",
+    text: "Formar, profissionalizar e conectar talentos angolanos, transformando o futuro da tecnologia no país.",
   },
   {
     id: "visao",
     title: "Visão",
     image: "/images/visao.png",
-    text: "Ser a maior referência em videojogos em África, reconhecida pela excelência e inovação.",
+    text: "Ser a maior referência em videojogos em Angola, reconhecida pela excelência e inovação.",
   },
   {
     id: "valores",
@@ -29,7 +28,6 @@ const content = [
 const MVVSection = () => {
   const [activeItem, setActiveItem] = useState("missao");
 
-  // Autoplay a cada 5 segundos
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveItem((prev) => {
@@ -38,7 +36,6 @@ const MVVSection = () => {
         return content[nextIndex].id;
       });
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -49,12 +46,18 @@ const MVVSection = () => {
       {/* Background */}
       <div className="absolute inset-0 z-0">
         <div
-          className="w-full h-full bg-cover bg-center opacity-30"
+          className="w-full h-full bg-cover bg-center opacity-40"
           style={{
             backgroundImage: "url('/grainy-gradient.png')",
             mixBlendMode: "overlay",
           }}
         ></div>
+
+        {/* Fade no topo */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black via-black/70 to-transparent pointer-events-none"></div>
+
+        {/* Fade no bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none"></div>
       </div>
 
       <div className="relative z-10">

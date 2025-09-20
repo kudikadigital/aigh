@@ -8,6 +8,7 @@ import CTASection from "@/components/sections/CTASection";
 import CTAWithCountdown from "@/components/sections/CTAWithCountdown";
 import Header from "./(components)/navbar";
 import Footer from "./(components)/footer";
+import SubscriptionForm from "@/components/sections/SubscriptionForm";
 
 export default function Home() {
   return (
@@ -25,10 +26,11 @@ export default function Home() {
       <div id="evento" className="mt-20">
         <WhyParticipateSection />
       </div>
-      <div id="contato" className="mt-20">
         <CTAWithCountdown />
+      <div id="contato" className="mt-20">
+        <SubscriptionForm />
       </div>
-      <CTASection />
+      {/* <CTASection /> */}
       <Footer />
     </div>
   );

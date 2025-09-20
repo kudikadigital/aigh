@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { CalendarClock, Sparkles } from "lucide-react";
 
 export default function Countdown() {
   const targetDate = new Date(new Date().getFullYear(), new Date().getMonth(), 28);
@@ -32,7 +32,7 @@ export default function Countdown() {
       "
     >
       {/* Ícone à esquerda */}
-      <Sparkles size={18} className="text-[#FF6D0B]" />
+      <CalendarClock size={18} className="text-[#FF6D0B]" />
 
       {/* Blocos de tempo (todos dentro do mesmo container) */}
       <div className="flex items-center gap-4">

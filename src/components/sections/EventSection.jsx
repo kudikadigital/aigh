@@ -33,7 +33,7 @@ const carouselItems = [
     id: 5,
     title: "Organizadores de Eventos",
     icon: "🎤",
-    image: "/images/ev05v.jpg",
+    image: "/images/ev05.jpg",
   },
 ];
 

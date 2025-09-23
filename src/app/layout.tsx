@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "A⚡️GH",
     images: [
       {
-        url: "/og-image.png", // coloque uma imagem OG na pasta public
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "AIGH – O Raio dos Videojogos em Angola",
@@ -63,11 +63,13 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white min-h-screen`}
       >
         {/* <Header /> */}
-        {children}
-        {/* <Footer  */}
+        <div className="min-h-screen bg-black">
+          {children}
+        </div>
+        {/* <Footer /> */}
       </body>
     </html>
   );

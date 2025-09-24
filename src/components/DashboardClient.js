@@ -18,7 +18,10 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { Activity, Users, UserCheck, FolderGit, TrendingUp, Eye, Mail, Phone, User, PieChart, BarChart3, Target } from "lucide-react";
+import { 
+  Activity, Users, UserCheck, FolderGit, TrendingUp, Eye, Mail, Phone, User, 
+  PieChart, BarChart3, Target, Download, Filter, X, CheckCircle, AlertCircle 
+} from "lucide-react";
 import { parseISO, format, subDays, subWeeks, subMonths, subYears, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -44,6 +47,7 @@ ChartJS.register(
  * @property {string} [profile]
  * @property {string} created_at
  */
+
 /**
  * @param {{ subscribers: Subscriber[] }} props
  */
@@ -52,7 +56,14 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
   const [loading, setLoading] = useState(!initialSubscribers.length);
   const [period, setPeriod] = useState("month");
   const [visibleCount, setVisibleCount] = useState(10);
-  const [activeChart, setActiveChart] = useState("bar"); // 'bar', 'line', 'pie', 'doughnut'
+  const [activeChart, setActiveChart] = useState("bar");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState({
+    withProfile: false,
+    withoutProfile: false,
+    roles: [],
+    duplicates: false
+  });
 
   useEffect(() => {
     async function fetchSubscribers() {
@@ -78,38 +89,54 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
     fetchSubscribers();
   }, [initialSubscribers]);
 
-  // Estatísticas
-  const totalSubscribers = subscribers.length;
-  const totalWithProfile = subscribers.filter((s) => s.profile).length;
-  const uniqueRoles = new Set(subscribers.map((s) => s.role)).size;
+  // Remover duplicados por email (mantém o registro mais recente)
+  const uniqueSubscribers = useMemo(() => {
+    const unique = subscribers.reduce((acc, current) => {
+      const existing = acc.find(item => item.email === current.email);
+      if (!existing) {
+        acc.push(current);
+      } else if (new Date(current.created_at) > new Date(existing.created_at)) {
+        // Substitui pelo registro mais recente
+        acc = acc.filter(item => item.email !== current.email);
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+    
+    return unique;
+  }, [subscribers]);
+
+  // Estatísticas baseadas nos dados únicos
+  const totalSubscribers = uniqueSubscribers.length;
+  const totalWithProfile = uniqueSubscribers.filter((s) => s.profile).length;
+  const uniqueRoles = new Set(uniqueSubscribers.map((s) => s.role)).size;
 
   // Análise de perfis por role
   const roleDistribution = useMemo(() => {
-    const roles = subscribers.reduce((acc, subscriber) => {
+    const roles = uniqueSubscribers.reduce((acc, subscriber) => {
       const role = subscriber.role || "Não informado";
       acc[role] = (acc[role] || 0) + 1;
       return acc;
     }, {});
 
-    // Ordenar por quantidade (decrescente)
     return Object.entries(roles)
       .sort(([, a], [, b]) => b - a)
       .reduce((acc, [role, count]) => {
         acc[role] = count;
         return acc;
       }, {});
-  }, [subscribers]);
+  }, [uniqueSubscribers]);
 
   // Perfis com e sem profile
   const profileStatus = useMemo(() => {
-    const withProfile = subscribers.filter(s => s.profile).length;
-    const withoutProfile = subscribers.length - withProfile;
+    const withProfile = uniqueSubscribers.filter(s => s.profile).length;
+    const withoutProfile = uniqueSubscribers.length - withProfile;
     
     return {
       "Com Perfil": withProfile,
       "Sem Perfil": withoutProfile
     };
-  }, [subscribers]);
+  }, [uniqueSubscribers]);
 
   // Evolução temporal (últimos 30 dias)
   const last30DaysData = useMemo(() => {
@@ -118,7 +145,7 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
       return format(date, "dd/MM", { locale: ptBR });
     });
 
-    const dailyCounts = subscribers.reduce((acc, subscriber) => {
+    const dailyCounts = uniqueSubscribers.reduce((acc, subscriber) => {
       const date = format(parseISO(subscriber.created_at), "dd/MM", { locale: ptBR });
       if (last30Days.includes(date)) {
         acc[date] = (acc[date] || 0) + 1;
@@ -126,7 +153,6 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
       return acc;
     }, {});
 
-    // Preencher dias sem inscrições com 0
     last30Days.forEach(date => {
       if (!dailyCounts[date]) {
         dailyCounts[date] = 0;
@@ -137,10 +163,10 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
       labels: last30Days,
       data: last30Days.map(date => dailyCounts[date])
     };
-  }, [subscribers]);
+  }, [uniqueSubscribers]);
 
   // Filtro por período
-  const filteredSubscribers = useMemo(() => {
+  const filteredByPeriod = useMemo(() => {
     let startDate = new Date(0);
     const now = new Date();
     
@@ -149,12 +175,41 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
     else if (period === "month") startDate = subMonths(now, 1);
     else if (period === "year") startDate = subYears(now, 1);
 
-    return subscribers.filter((s) => isAfter(parseISO(s.created_at), startDate));
-  }, [subscribers, period]);
+    return uniqueSubscribers.filter((s) => isAfter(parseISO(s.created_at), startDate));
+  }, [uniqueSubscribers, period]);
+
+  // Aplicar filtros avançados
+  const filteredSubscribers = useMemo(() => {
+    let filtered = filteredByPeriod;
+
+    // Filtro por perfil
+    if (selectedFilters.withProfile && !selectedFilters.withoutProfile) {
+      filtered = filtered.filter(s => s.profile);
+    } else if (selectedFilters.withoutProfile && !selectedFilters.withProfile) {
+      filtered = filtered.filter(s => !s.profile);
+    }
+
+    // Filtro por roles
+    if (selectedFilters.roles.length > 0) {
+      filtered = filtered.filter(s => selectedFilters.roles.includes(s.role));
+    }
+
+    // Mostrar duplicados (quando não filtrado por unique)
+    if (selectedFilters.duplicates) {
+      const emailCounts = subscribers.reduce((acc, subscriber) => {
+        acc[subscriber.email] = (acc[subscriber.email] || 0) + 1;
+        return acc;
+      }, {});
+      
+      filtered = subscribers.filter(subscriber => emailCounts[subscriber.email] > 1);
+    }
+
+    return filtered;
+  }, [filteredByPeriod, selectedFilters, subscribers]);
 
   const newSubscribers = filteredSubscribers.length;
 
-  // Dados para gráficos principais
+  // Dados para gráficos
   const chartColors = [
     '#FF5C00', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
     '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#14B8A6', '#6366F1'
@@ -226,10 +281,7 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
         position: 'top',
         labels: {
           color: '#E5E7EB',
-          font: {
-            size: 12,
-            weight: '500'
-          },
+          font: { size: 12, weight: '500' },
           padding: 15
         }
       },
@@ -243,30 +295,12 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
     },
     scales: {
       x: {
-        grid: { 
-          color: 'rgba(255,255,255,0.1)',
-          borderColor: 'rgba(255,255,255,0.3)'
-        },
-        ticks: { 
-          color: '#D1D5DB',
-          font: {
-            size: 11,
-            weight: '500'
-          }
-        }
+        grid: { color: 'rgba(255,255,255,0.1)' },
+        ticks: { color: '#D1D5DB', font: { size: 11, weight: '500' } }
       },
       y: {
-        grid: { 
-          color: 'rgba(255,255,255,0.1)',
-          borderColor: 'rgba(255,255,255,0.3)'
-        },
-        ticks: { 
-          color: '#D1D5DB',
-          font: {
-            size: 11,
-            weight: '500'
-          }
-        }
+        grid: { color: 'rgba(255,255,255,0.1)' },
+        ticks: { color: '#D1D5DB', font: { size: 11, weight: '500' } }
       }
     }
   };
@@ -280,10 +314,7 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
         position: 'right',
         labels: {
           color: '#E5E7EB',
-          font: {
-            size: 11,
-            weight: '500'
-          },
+          font: { size: 11, weight: '500' },
           padding: 15,
           usePointStyle: true,
         }
@@ -300,6 +331,60 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
     () => filteredSubscribers.slice(0, visibleCount),
     [filteredSubscribers, visibleCount]
   );
+
+  // Função para exportar dados
+  const exportToCSV = () => {
+    const headers = ['Nome', 'Email', 'Perfil', 'Telefone', 'Data de Inscrição', 'Link do Perfil'];
+    const csvData = filteredSubscribers.map(subscriber => [
+      subscriber.name,
+      subscriber.email,
+      subscriber.role,
+      subscriber.phone || 'N/A',
+      format(parseISO(subscriber.created_at), 'dd/MM/yyyy HH:mm'),
+      subscriber.profile || 'N/A'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `inscritos_${format(new Date(), 'dd-MM-yyyy')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Função para alternar filtros
+  const toggleFilter = (filterType, value = null) => {
+    setSelectedFilters(prev => {
+      if (filterType === 'withProfile' || filterType === 'withoutProfile' || filterType === 'duplicates') {
+        return { ...prev, [filterType]: !prev[filterType] };
+      }
+      if (filterType === 'roles') {
+        const newRoles = prev.roles.includes(value) 
+          ? prev.roles.filter(role => role !== value)
+          : [...prev.roles, value];
+        return { ...prev, roles: newRoles };
+      }
+      return prev;
+    });
+  };
+
+  // Resetar filtros
+  const resetFilters = () => {
+    setSelectedFilters({
+      withProfile: false,
+      withoutProfile: false,
+      roles: [],
+      duplicates: false
+    });
+  };
 
   function handleShowMore() {
     setVisibleCount((prev) => prev + 10);
@@ -318,16 +403,11 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
 
   const renderChart = () => {
     switch (activeChart) {
-      case 'bar':
-        return <Bar data={barData} options={chartOptions} />;
-      case 'line':
-        return <Line data={lineData} options={chartOptions} />;
-      case 'pie':
-        return <Pie data={pieData} options={pieChartOptions} />;
-      case 'doughnut':
-        return <Doughnut data={doughnutData} options={pieChartOptions} />;
-      default:
-        return <Bar data={barData} options={chartOptions} />;
+      case 'bar': return <Bar data={barData} options={chartOptions} />;
+      case 'line': return <Line data={lineData} options={chartOptions} />;
+      case 'pie': return <Pie data={pieData} options={pieChartOptions} />;
+      case 'doughnut': return <Doughnut data={doughnutData} options={pieChartOptions} />;
+      default: return <Bar data={barData} options={chartOptions} />;
     }
   };
 
@@ -339,61 +419,198 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
           <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
             Dashboard de Inscrições
           </h1>
-          <p className="text-gray-300 mt-1">Análise completa dos perfis dos participantes</p>
+          <p className="text-gray-300 mt-1">
+            {selectedFilters.duplicates ? 'Visualizando duplicados' : `${totalSubscribers} inscritos únicos`}
+          </p>
         </div>
         <div className="flex items-center gap-3 bg-gray-900/50 px-4 py-2 rounded-lg">
           <Activity className="text-orange-500" size={24} />
           <span className="text-sm text-gray-200">
-            {newSubscribers} novos no período
+            {newSubscribers} {selectedFilters.duplicates ? 'duplicados encontrados' : 'novos no período'}
           </span>
         </div>
       </header>
 
-      {/* Filtros de período */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="bg-gray-900/30 p-1 rounded-lg w-fit">
-          <Tabs value={period} onValueChange={setPeriod} className="w-full">
-            <TabsList className="bg-transparent gap-1">
-              <TabsTrigger value="day" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
-                24h
-              </TabsTrigger>
-              <TabsTrigger value="week" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
-                Semana
-              </TabsTrigger>
-              <TabsTrigger value="month" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
-                Mês
-              </TabsTrigger>
-              <TabsTrigger value="year" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
-                Ano
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* Filtros Superiores */}
+      <div className="flex flex-col lg:flex-row gap-4 justify-between">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="bg-gray-900/30 p-1 rounded-lg w-fit">
+            <Tabs value={period} onValueChange={setPeriod} className="w-full">
+              <TabsList className="bg-transparent gap-1">
+                <TabsTrigger value="day" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
+                  24h
+                </TabsTrigger>
+                <TabsTrigger value="week" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
+                  Semana
+                </TabsTrigger>
+                <TabsTrigger value="month" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
+                  Mês
+                </TabsTrigger>
+                <TabsTrigger value="year" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-4 py-2">
+                  Ano
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <div className="bg-gray-900/30 p-1 rounded-lg w-fit">
+            <Tabs value={activeChart} onValueChange={setActiveChart} className="w-full">
+              <TabsList className="bg-transparent gap-1">
+                <TabsTrigger value="bar" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
+                  <BarChart3 size={16} className="mr-2" />
+                  Barras
+                </TabsTrigger>
+                <TabsTrigger value="line" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
+                  <TrendingUp size={16} className="mr-2" />
+                  Linha
+                </TabsTrigger>
+                <TabsTrigger value="pie" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
+                  <PieChart size={16} className="mr-2" />
+                  Pizza
+                </TabsTrigger>
+                <TabsTrigger value="doughnut" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
+                  <Target size={16} className="mr-2" />
+                  Rosca
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
-        {/* Seletor de tipo de gráfico */}
-        <div className="bg-gray-900/30 p-1 rounded-lg w-fit">
-          <Tabs value={activeChart} onValueChange={setActiveChart} className="w-full">
-            <TabsList className="bg-transparent gap-1">
-              <TabsTrigger value="bar" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
-                <BarChart3 size={16} className="mr-2" />
-                Barras
-              </TabsTrigger>
-              <TabsTrigger value="line" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
-                <TrendingUp size={16} className="mr-2" />
-                Linha
-              </TabsTrigger>
-              <TabsTrigger value="pie" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
-                <PieChart size={16} className="mr-2" />
-                Pizza
-              </TabsTrigger>
-              <TabsTrigger value="doughnut" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300 rounded-md px-3 py-2">
-                <Target size={16} className="mr-2" />
-                Rosca
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 text-orange-300 px-4 py-2 rounded-lg transition-all"
+          >
+            <Filter size={16} />
+            Filtros
+            {Object.values(selectedFilters).flat().filter(Boolean).length > 0 && (
+              <span className="bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {Object.values(selectedFilters).flat().filter(Boolean).length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300 px-4 py-2 rounded-lg transition-all"
+          >
+            <Download size={16} />
+            Exportar CSV
+          </button>
         </div>
       </div>
+
+      {/* Filtros Avançados */}
+      {showFilters && (
+        <Card className="bg-gray-900/20 border-gray-700 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Filter size={18} />
+                Filtros Avançados
+              </CardTitle>
+              <div className="flex gap-2">
+                <button
+                  onClick={resetFilters}
+                  className="text-gray-400 hover:text-gray-300 text-sm flex items-center gap-1"
+                >
+                  <X size={14} />
+                  Limpar
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-400 hover:text-gray-300"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Filtro de Perfil */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Status do Perfil</label>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => toggleFilter('withProfile')}
+                    className={`flex items-center gap-2 w-full p-2 rounded text-sm transition-all ${
+                      selectedFilters.withProfile 
+                        ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' 
+                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <CheckCircle size={14} />
+                    Com Perfil ({totalWithProfile})
+                  </button>
+                  <button
+                    onClick={() => toggleFilter('withoutProfile')}
+                    className={`flex items-center gap-2 w-full p-2 rounded text-sm transition-all ${
+                      selectedFilters.withoutProfile 
+                        ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' 
+                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <AlertCircle size={14} />
+                    Sem Perfil ({totalSubscribers - totalWithProfile})
+                  </button>
+                </div>
+              </div>
+
+              {/* Filtro de Roles */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Tipo de Perfil</label>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {Object.keys(roleDistribution).map(role => (
+                    <button
+                      key={role}
+                      onClick={() => toggleFilter('roles', role)}
+                      className={`flex items-center gap-2 w-full p-2 rounded text-sm transition-all ${
+                        selectedFilters.roles.includes(role)
+                          ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' 
+                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                      }`}
+                    >
+                      <User size={14} />
+                      {role} ({roleDistribution[role]})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filtro de Duplicados */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Duplicados</label>
+                <button
+                  onClick={() => toggleFilter('duplicates')}
+                  className={`flex items-center gap-2 w-full p-2 rounded text-sm transition-all ${
+                    selectedFilters.duplicates
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                >
+                  <AlertCircle size={14} />
+                  Mostrar Duplicados
+                </button>
+                <p className="text-xs text-gray-400">
+                  {subscribers.length - uniqueSubscribers} emails duplicados encontrados
+                </p>
+              </div>
+
+              {/* Resumo dos Filtros */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Resumo</label>
+                <div className="text-sm text-gray-300 space-y-1">
+                  <div>Inscritos únicos: {totalSubscribers}</div>
+                  <div>Filtrados: {filteredSubscribers.length}</div>
+                  <div>Duplicados: {subscribers.length - uniqueSubscribers}</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Separator className="bg-gray-700" />
 
@@ -604,6 +821,11 @@ export default function DashboardClient({ subscribers: initialSubscribers }) {
 /**
  * @param {MetricCardProps} props
  */
+
+
+
+
+// MetricCard component permanece o mesmo
 function MetricCard({ title, value, icon, trend, percentage }) {
   return (
     <Card className="bg-gray-900/20 border-gray-700 hover:border-gray-600 transition-all duration-200 backdrop-blur-sm">
